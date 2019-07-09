@@ -1,0 +1,321 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+  int tableSz = 0, totElements = 0, subHash = 0;
+  struct node *hashBucket = NULL;
+
+  struct node {
+         int rollno;
+         char name[100];
+         int age;
+         int marker;
+         char sec[5];
+         char dept[5];
+         float cgpa;
+         int sem;
+
+  };
+
+char** str_split(char* a_str, const char a_delim)
+{
+    char** result    = 0;
+    size_t count     = 0;
+    char* tmp        = a_str;
+    char* last_comma = 0;
+    char delim[2];
+    delim[0] = a_delim;
+    delim[1] = 0;
+
+    /* Count how many elements will be extracted. */
+    while (*tmp)
+    {
+        if (a_delim == *tmp)
+        {
+            count++;
+            last_comma = tmp;
+        }
+        tmp++;
+    }
+
+    /* Add space for trailing token. */
+    count += last_comma < (a_str + strlen(a_str) - 1);
+
+    /* Add space for terminating null string so caller
+       knows where the list of returned strings ends. */
+    count++;
+
+    result = malloc(sizeof(char*) * count);
+
+    if (result)
+    {
+        size_t idx  = 0;
+        char* token = strtok(a_str, delim);
+
+        while (token)
+        {
+         //   assert(idx < count);
+            *(result + idx++) = strdup(token);
+            token = strtok(0, delim);
+        }
+        //assert(idx == count - 1);
+        *(result + idx) = 0;
+    }
+
+    return result;
+}
+
+  void ReadDataFromTextFile()
+  {
+
+        char tmp[1024]={0x0};
+        FILE *fp;
+        fp=fopen("C:\\Users\\LENOVO\\Desktop\\file.txt","r");
+        if(fp==NULL)
+        {
+          puts("cannot open file");
+          exit(1);
+        }
+
+        int i;
+        while(fgets(tmp,sizeof(tmp),fp)!=0) /* read a record */
+        {
+            i = 0;
+            char ** Values = str_split(tmp, ',');
+            insertIntoHashTable(atoi(*(Values + i++)), *(Values + i++), *(Values + i++),
+                                atoi(*(Values + i++)), *(Values + i++), atof(*(Values + i)),
+                                atoi(*(Values + i)));
+        }
+/*            node* n = (node*)malloc(sizeof(node));
+            n->rollno = atoi(*(Values + i));
+            i++
+
+            n->name = *(Values + i);
+            i++;
+
+            n->dept = *(Values + i);
+            i++;
+
+            n->sem = *(Values + i);
+            i++;
+
+            n->sec = *(Values + i);
+            i++;
+
+            n->cgpa = atof*(Values + i));
+            i++
+
+            n->age = atoi(*(Values + i));
+
+        }*/
+        fclose(fp);
+  }
+  void insertIntoHashTable(int rollno, char *name, int age, char *sec, char* dept, float cgpa,int sem,int marker)
+   {
+        /* 1st hashing - finding hash index */
+        int hashInd = rollno % tableSz, hashVal;
+        /* 2nd hashing - no of buckets to skip while probing */
+        hashVal = subHash - (rollno % subHash);
+        if (tableSz == totElements) {
+                printf("Can't perform Insertion..Hash Table is full!!");
+                return;
+        }
+        /* linear probing */
+        while (hashBucket[hashInd].marker == 1) {
+                hashInd = (hashInd + hashVal)%tableSz;
+        }
+        hashBucket[hashInd].age = age;
+        strcpy(hashBucket[hashInd].name, name);
+        hashBucket[hashInd].marker = 1;
+        hashBucket[hashInd].cgpa = cgpa;
+        strcpy( hashBucket[hashInd].dept, dept);
+        strcpy( hashBucket[hashInd].sec, sec);
+        hashBucket[hashInd].sem = sem;
+        hashBucket[hashInd].rollno = rollno;
+
+        totElements++;
+        return;
+  }
+
+  void deleteFromHashTable(int rollno)
+  {
+        int hashInd = rollno % tableSz, count = 0, flag = 0, hashVal;
+        hashVal = subHash - (rollno % subHash);
+        if (totElements == 0) {
+                printf("Hash Table is Empty!!\n");
+                return;
+        }
+
+        while (hashBucket[hashInd].marker != 0 && count <= tableSz) {
+                if (hashBucket[hashInd].rollno == rollno) {
+                        hashBucket[hashInd].rollno = 0;
+                        hashBucket[hashInd].marker = -1;
+                        hashBucket[hashInd].age = 0;
+                        strcpy(hashBucket[hashInd].name, "\0");
+                        strcpy(hashBucket[hashInd].sec,"\0");
+                        hashBucket[hashInd].cgpa = 0.0;
+                       hashBucket[hashInd].sem=0;
+
+                        totElements--;
+                        flag = 1;
+                        break;
+                }
+                hashInd = (hashInd + hashVal)%tableSz;
+                count++;
+        }
+
+        if (flag)
+                printf("Given data deleted from Hash Table\n");
+        else
+                printf("Given data is not available in Hash Table\n");
+
+        return;
+  }
+
+  void searchData(int rollno) {
+        int hashInd = rollno % tableSz, flag = 0, count = 0, hashVal = 0;
+        hashVal = subHash - (rollno % subHash);
+        if (totElements == 0) {
+                printf("Hash Table is Empty!!");
+                return;
+        }
+        while (hashBucket[hashInd].marker != 0 && count <= tableSz) {
+                if (hashBucket[hashInd].rollno == rollno) {
+                        printf("Roll no. : %d\n", hashBucket[hashInd].rollno);
+                        printf("Name     : %s\n", hashBucket[hashInd].name);
+                        printf("Age      : %d\n", hashBucket[hashInd].age);
+                        printf("semester : %d\n",hashBucket[hashInd].sem);
+                        printf("section  : %s\n", hashBucket[hashInd].sec);
+                        printf("CGPA     : %f\n",hashBucket[hashInd].cgpa);
+
+
+                        flag = 1;
+                        break;
+                }
+                hashInd = (hashInd + hashVal) % tableSz;
+        }
+
+        if (!flag)
+                printf("Given data is not present in hash table\n");
+        return;
+  }
+
+  void display() {
+        int i;
+        if (totElements == 0) {
+                printf("Hash Table is Empty!!\n");
+                return;
+        }
+        printf("rollno     Name           Age        sem         sec        CGPA  \n");                       //Index
+        printf("----------------------------------------------------\n");
+        for (i = 0; i < tableSz; i++) {
+                if (hashBucket[i].marker == 1) {
+                        printf("%-13d", hashBucket[i].rollno);
+                        printf("%-15s", hashBucket[i].name);
+                        printf("%-7d", hashBucket[i].age);
+                        printf("%-7d", hashBucket[i].sem);
+                        printf("%-15s",hashBucket[i].sec);
+                        printf("%-8f\n",hashBucket[i].cgpa);
+                      //  printf("%d\n", i);
+                }
+        }
+        printf("\n");
+        return;
+  }
+
+  int main() {
+       int rollno, age, ch, i, flag = 0,sem;
+        char name[100],sec[5],dept[5];
+        float cgpa;
+        int marker;
+
+       // FILE *fp;
+        /*fp=fopen("student.txt","w+");
+        if(fp==NULL)
+        {
+            puts("cannot open file");
+            exit(1);
+
+        }*/
+        printf("Enter the total no of students:");
+        scanf("%d", &tableSz);
+
+//        fputs
+
+               while(1){
+                for (i = 2; i < tableSz; i++) {
+                        if (tableSz % i == 0) {
+                                flag = 1;
+                                break;
+                        }
+                }
+                if (!flag && tableSz > 2)                             break;
+                flag = 0;
+                tableSz++;
+        }        /* calculating sub-hash value */
+        subHash = (tableSz % 2 == 0) ? tableSz / 2 : (tableSz + 1) / 2;
+        /* allocating memory for hash bucket */
+        hashBucket = (struct node *)calloc(tableSz, sizeof(struct node));
+        while (1) {
+                printf("\n1. Insertion\t2. Deletion\n");
+                printf("3. Searching\t4. Display\n");
+                printf("5. Exit\nEnter ur choice:");
+                scanf("%d", &ch);
+                switch (ch) {
+                        case 1:
+
+
+                                printf("Enter the rollno.:");
+                                scanf("%d", &rollno);
+
+                                getchar();
+
+                                printf("Name:");
+                                scanf("%s",name);
+
+                                printf("Age:");
+                                scanf("%d", &age);
+
+                                printf("semester:");
+                                scanf("%d",&sem);
+
+                                printf("section:");
+                                scanf("%s",sec);
+
+                                printf("Dept:");
+                                scanf("%s", dept);
+
+                                printf("cgpa:");
+                                scanf("%f",&cgpa);
+
+                            marker=1;
+                                insertIntoHashTable(rollno, name, age, sec, dept, cgpa,sem,marker);
+                                 break;
+               /*                  else
+                                 {printf("student record is full,perform other operations");
+                            break;}*/
+                        case 2:
+                                printf("Enter the rollno.:");
+                                scanf("%d", &rollno);
+                                deleteFromHashTable(rollno);
+                                break;
+                          case 3:
+                                printf("Enter the rollno.:");
+                                scanf("%d", &rollno);
+                                searchData(rollno);
+                                break;
+                        case 4:
+                                display();
+                                break;
+                        case 5:
+                                exit(0);
+                        case 6:ReadDataFromTextFile();
+                                break;
+
+                        default:
+                                printf("U have entered wrong Option!!\n");
+                                break;
+                }
+        }
+        return 0;
+  }
